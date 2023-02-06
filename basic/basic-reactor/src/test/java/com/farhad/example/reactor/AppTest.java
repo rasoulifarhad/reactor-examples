@@ -30,4 +30,48 @@ public class AppTest {
                 .verifyComplete();
 
     }
+
+
+    @Test
+    public void generate_create_push__programmatically() {
+
+        AtomicInteger counter = new AtomicInteger(1);
+        Flux<Integer> generateFlux = Flux.generate(sink -> {
+                            if (counter.get() > 5  ) {
+                                sink.complete();
+                            } else {
+                                sink.next(counter.getAndIncrement());
+                            }
+        } );
+
+        Flux<Integer> createFlux = Flux.create(sink ->{
+                for (int i = 1; i <= 5; i++) {
+                    sink.next(i);
+                }
+                sink.complete();;
+        } );
+
+        Flux<Integer> pushFlux = Flux.push(sink ->{
+            for (int i = 1; i <= 5; i++) {
+                sink.next(i);
+            }
+            sink.complete();;
+        } );
+
+        StepVerifier
+                              .create(generateFlux)
+                              .expectNext(1,2,3,4,5)
+                              .verifyComplete() ;
+
+        StepVerifier
+                              .create(createFlux)
+                              .expectNext(1,2,3,4,5)
+                              .verifyComplete() ;
+
+        StepVerifier
+                              .create(pushFlux)
+                              .expectNext(1,2,3,4,5)
+                              .verifyComplete() ;
+                              
+    }
 }
