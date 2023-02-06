@@ -1,5 +1,6 @@
 package com.farhad.example.reactor;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -73,5 +74,24 @@ public class AppTest {
                               .expectNext(1,2,3,4,5)
                               .verifyComplete() ;
                               
+    }
+
+    @Test
+    public void futureFlux() {
+
+        AtomicInteger counter = new AtomicInteger(1);
+
+        CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
+               log.info("Increment counter");
+               return counter.incrementAndGet();
+        });
+
+        Mono<Integer> mono =  Mono.fromFuture(future);
+
+        StepVerifier
+               .create(mono)
+               .expectNext(1)
+               .verifyComplete();
+
     }
 }
