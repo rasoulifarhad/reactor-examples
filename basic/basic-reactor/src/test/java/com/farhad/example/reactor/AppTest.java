@@ -77,7 +77,7 @@ public class AppTest {
     }
 
     @Test
-    public void futureFlux() {
+    public void future_flux_test() {
 
         AtomicInteger counter = new AtomicInteger(1);
 
