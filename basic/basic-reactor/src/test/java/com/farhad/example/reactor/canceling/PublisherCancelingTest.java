@@ -1,14 +1,17 @@
 package com.farhad.example.reactor.canceling;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -80,6 +83,27 @@ public class PublisherCancelingTest {
                     .expectNext(10, 11)
                     .expectComplete()
                     .verify();    
+    }
+
+    @Test
+    public void disposeTest() throws InterruptedException {
+
+        //Given
+        Flux<Integer> intFlux = 
+                    Flux.range(1, 10)
+                        .delayElements(Duration.ofSeconds(1));
+
+        //When
+        AtomicInteger count = new AtomicInteger(0);
+        Disposable disposable =  intFlux.subscribe(i -> {
+                                            log.info("Received: {}", i);
+                                            count.incrementAndGet();
+                                    },e -> log.error("Error: {}", e.getMessage()));
+        Thread.sleep(5000);
+        disposable.dispose();;
+        
+        //Then
+        assertEquals(4, count.get());
     }
 
 }
