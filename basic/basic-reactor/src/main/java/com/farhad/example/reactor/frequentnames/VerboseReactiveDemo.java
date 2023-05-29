@@ -1,5 +1,6 @@
 package com.farhad.example.reactor.frequentnames;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,17 +16,18 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 @Slf4j
-public class ReactiveDemo {
-    
-    private static final int BATCH_SIZE = 100000;
+public class VerboseReactiveDemo {
+
     public static void main(String[] args) {
         List<String> namesList = FrequentNamesDemo.generateNames();
 
-        int batchSize = BATCH_SIZE ;
+        int batchSize = namesList.size() / 10 ; ;
         Mono<Map<String,Long>> finalCounts=  Flux.fromIterable(namesList)
+                                                    // Split to batches
                                                     .buffer(batchSize)
-                                                    .flatMap(ReactiveDemo::processBatch)
-                                                    .reduce(new HashMap<>(), ReactiveDemo::mergeIntermediateCount)
+                                                    // Aggregate intermediate counts asynchronously
+                                                    .flatMap(VerboseReactiveDemo::processBatch)
+                                                    .reduce(new HashMap<>(), VerboseReactiveDemo::mergeIntermediateCount)
                                                     ;
         Flux<Entry<String,Long>> finalCountsEntry = finalCounts.flatMapIterable(t -> t.entrySet());
         // Mono<Entry<String,Long>> frequentEntry = MathFlux.max(finalCountsEntry, Map.Entry.comparingByValue(null));
@@ -38,12 +40,14 @@ public class ReactiveDemo {
         return acc;
     }
     private static Mono<Map<String,Long>> processBatch(List<String> batch) {
+        log.info("[{}] Subscribing to batch processing ", LocalDateTime.now());
         return Flux.fromIterable(batch)
                     .groupBy(Function.identity())
                     .flatMap(group -> group.count().map(count -> Tuples.of(group.key(), count) ) )
                     .collectMap(Tuple2::getT1, Tuple2::getT2)
-                    .doOnSubscribe(s -> log.info("Processing batch...."))
+                    .doOnSubscribe( __ -> log.info("[{}] Processing batch....", LocalDateTime.now()))
                     .subscribeOn(Schedulers.boundedElastic())
                     ;
     }
+
 }

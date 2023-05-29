@@ -142,4 +142,40 @@ public class SubscribeOnDemo {
         }
     }
 
+    /**
+     * By default, the chain is executed by the thread where the .subscribe() was invoked.
+     */
+    static class ChainExcutionBlockMainThread {
+        public static void main(String[] args) {
+            Flux.just(1, 2, 3)
+                .map(i -> {
+                    System.out.printf("Thread [%s] Incrementing  %s\n", Thread.currentThread().getName(), i);
+                    return i + 1;
+                })
+                .subscribe(i -> {
+                    System.out.printf("Thread [%s] Got %s \n", Thread.currentThread().getName(), i);
+                });
+            
+            System.out.printf("Thread [%s] ,After the Flux!\n", Thread.currentThread().getName());
+        }
+    }
+
+    static class ChainExcutionNonBlockMainThread {
+        public static void main(String[] args) throws InterruptedException {
+            Flux.just(1, 2, 3)
+                .map(i -> {
+                    System.out.printf("Thread [%s] Incrementing  %s\n", Thread.currentThread().getName(), i);
+                    return i + 1;
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe(i -> {
+                    System.out.printf("Thread [%s] Got %s \n", Thread.currentThread().getName(), i);
+                });
+            
+            System.out.printf("Thread [%s] ,After the Flux!\n", Thread.currentThread().getName());
+
+            Thread.sleep(2000);
+        }
+    }
+
 }
